@@ -102,13 +102,12 @@ namespace CGL
     Vector3D norms(0,0,0);
 
     HalfedgeCIter h = halfedge();
-    // Ensure we don't have a boundary halfedge to start with
+
     if (h->face()->isBoundary()) {
         h = h->twin()->next();
     }
     HalfedgeCIter h_orig = h;
 
-    // Iterate over all incident faces
     do {
         // Calculate the normal for the current face
         Vector3D p0 = h->vertex()->position;
@@ -117,21 +116,16 @@ namespace CGL
 
         Vector3D normal = cross(p1 - p0, p2 - p0);
 
-        // Add the face's area-weighted normal to the sum
         norms += normal;
 
-        // Move to the next face incident on this vertex
         h = h->twin()->next();
-    } while (h != h_orig); // Continue until we've gone around the vertex
+    } while (h != h_orig);
 
-    // Normalize the sum of the area-weighted normals to get the approximate vertex normal
     if (norms.norm() > 0) {
         norms.normalize();
     }
 
     return norms;
-
-    return Vector3D();
   }
 
   EdgeIter HalfedgeMesh::flipEdge( EdgeIter e0 )
