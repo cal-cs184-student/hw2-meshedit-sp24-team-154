@@ -68,6 +68,7 @@ namespace CGL {
 
     int drawingCurve = 0;
 
+
   };
 
 }

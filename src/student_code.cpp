@@ -16,7 +16,16 @@ namespace CGL
   std::vector<Vector2D> BezierCurve::evaluateStep(std::vector<Vector2D> const &points)
   { 
     // TODO Part 1.
-    return std::vector<Vector2D>();
+    if (points.size() <= 1) {
+        return points;
+    }
+    vector<Vector2D> ans;
+    ans.reserve(points.size()-1);
+
+    for (int i = 0; i < points.size()-1; ++i) {
+        ans.push_back((1-t)*points[i]+t*points[i+1]);
+    }
+    return ans;
   }
 
   /**
@@ -30,7 +39,18 @@ namespace CGL
   std::vector<Vector3D> BezierPatch::evaluateStep(std::vector<Vector3D> const &points, double t) const
   {
     // TODO Part 2.
-    return std::vector<Vector3D>();
+    if (points.size() <= 1) {
+        return points;
+    }
+
+    vector<Vector3D> ans;
+    ans.reserve(points.size()-1);
+
+    for (int i = 0; i < points.size()-1; ++i) {
+        ans.push_back((1-t)*points[i]+t*points[i+1]);
+    }
+
+    return ans;
   }
 
   /**
@@ -43,7 +63,11 @@ namespace CGL
   Vector3D BezierPatch::evaluate1D(std::vector<Vector3D> const &points, double t) const
   {
     // TODO Part 2.
-    return Vector3D();
+    vector<Vector3D> ans = points;
+    while (ans.size() > 1) {
+        ans = evaluateStep(ans, t);
+    }
+    return ans[0];
   }
 
   /**
@@ -56,7 +80,17 @@ namespace CGL
   Vector3D BezierPatch::evaluate(double u, double v) const 
   {  
     // TODO Part 2.
-    return Vector3D();
+    vector<Vector3D> rows;
+    unsigned long n = controlPoints.size();
+    rows.reserve(n);
+
+    for (int i = 0; i < n; ++i) {
+        rows.push_back(evaluate1D(controlPoints[i], u));
+    }
+
+    Vector3D ans = evaluate1D(rows, v);
+
+    return ans;
   }
 
   Vector3D Vertex::normal( void ) const
@@ -65,6 +99,38 @@ namespace CGL
     // Returns an approximate unit normal at this vertex, computed by
     // taking the area-weighted average of the normals of neighboring
     // triangles, then normalizing.
+    Vector3D norms(0,0,0);
+
+    HalfedgeCIter h = halfedge();
+    // Ensure we don't have a boundary halfedge to start with
+    if (h->face()->isBoundary()) {
+        h = h->twin()->next();
+    }
+    HalfedgeCIter h_orig = h;
+
+    // Iterate over all incident faces
+    do {
+        // Calculate the normal for the current face
+        Vector3D p0 = h->vertex()->position;
+        Vector3D p1 = h->next()->vertex()->position;
+        Vector3D p2 = h->next()->next()->vertex()->position;
+
+        Vector3D normal = cross(p1 - p0, p2 - p0);
+
+        // Add the face's area-weighted normal to the sum
+        norms += normal;
+
+        // Move to the next face incident on this vertex
+        h = h->twin()->next();
+    } while (h != h_orig); // Continue until we've gone around the vertex
+
+    // Normalize the sum of the area-weighted normals to get the approximate vertex normal
+    if (norms.norm() > 0) {
+        norms.normalize();
+    }
+
+    return norms;
+
     return Vector3D();
   }
 
